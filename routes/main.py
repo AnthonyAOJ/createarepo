@@ -1,7 +1,8 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, abort, render_template, request
 
 from models import db
 from models.submission import Submission
+from models.evidence import Evidence
 from services.ai_service import analyze_claim
 from services.evidence_service import find_evidence
 
@@ -34,6 +35,19 @@ def analyze():
     )
 
     db.session.add(submission)
+    db.session.flush()  # assigns submission.id before Evidence rows reference it
+
+    # Issue #14: persist each retained evidence item against this
+    # verification so it can be reconstructed later (see /submissions/<id>).
+    for source in sources:
+        db.session.add(Evidence(
+            submission_id=submission.id,
+            title=source.get("title", "Untitled source"),
+            url=source.get("url", ""),
+            publisher=source.get("publisher"),
+            excerpt=source.get("snippet")
+        ))
+
     db.session.commit()
 
     return render_template(
@@ -55,6 +69,20 @@ def history():
     return render_template(
         "history.html",
         submissions=saved_submissions
+    )
+
+
+@main.route("/submissions/<int:submission_id>")
+def submission_detail(submission_id):
+    submission = db.session.get(Submission, submission_id)
+
+    if submission is None:
+        abort(404)
+
+    return render_template(
+        "detail.html",
+        submission=submission,
+        evidence_items=submission.evidence_items
     )
 
 

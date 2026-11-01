@@ -20,7 +20,10 @@
 
     {% for submission in submissions %}
 
-    <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+    <a
+        href="{{ url_for('main.submission_detail', submission_id=submission.id) }}"
+        class="block bg-white border border-slate-200 rounded-xl shadow-sm p-5 hover:border-blue-300 hover:shadow-md transition"
+    >
 
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
 
@@ -77,7 +80,7 @@
 
         {% endif %}
 
-    </div>
+    </a>
 
     {% endfor %}
 
